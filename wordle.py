@@ -1,33 +1,24 @@
-import urllib
-
-# Import the Memory class from joblib
-from joblib import Memory
-
-# Create cache directory
-cache_dir = ".joblib-cache"
-
-# Create a memory object
-mem = Memory(cache_dir)
-
-
-@mem.cache(verbose=0)
-def get_word_list():
-    url = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt"
-    words = urllib.request.urlopen(url).read().decode().split()
-    return words
-    # read world list
-    # words = open('english-words/words_alpha.txt', 'rt').read().split()
-
-
-words = get_word_list()
-
-# select only those words that are 5 characters long
-w5 = [word for word in words if len(word) == 5]
-
-# enter letters with known correct positions here:
-# for 'alife', we would type
+# Wordle advisor
 #
-# correct_pos = {"a": 0, "l": 1, "i": 2, "f": 3, "e": 4}
+# Provide partial information about guesses
+# and get suggestions for next guesses.
+#
+# (C) Hans Fangohr, Jan 2022
+# 
+
+
+############################################
+#
+# Enter known information here
+#
+#
+
+# 1. enter letters with known correct positions here:
+# If we know the first 4 characters are 'alif', we would type
+#
+# correct_pos = {"a": 0, "l": 1, "i": 2, "f": 3}
+#
+# In Python (as in C), the first entry has index 0.
 #
 # if we don't know any correct letters with correct positions yet, use
 #
@@ -35,17 +26,19 @@ w5 = [word for word in words if len(word) == 5]
 
 correct_pos = {}
 
-# Add letters which we know are wrong and do not occur in the searched
-# worlde. These can be added in any order. For example, if
+# 2. Add letters which you know are wrong and do not occur in the searched
+# wordle. These can be added in any order. For example, if
 # the letters x, y, z, a, k, and c are incorrect, we could write:
+#
 # incorrect_letters = set("xyzakc")
 #
 # start with an empty set:
+#
 # incorrect_letters = set("")
 
 incorrect_letters = set("")
 
-# Add letters for which we know that they occur in the worlde, but
+# Add letters for which we know that they occur in the wordle, but
 # we haven't got the correct position yet. Enter the wrong position as
 # an index.
 #
@@ -61,20 +54,45 @@ incorrect_letters = set("")
 
 incorrect_position = {}
 
-must_include = set(incorrect_position.keys())
-
-
+#
 # No changes needed below here
 #
-# ==========================================
+###################################################
 
-sel = w5
+
+
+
+import urllib
+
+# Import the Memory class from joblib (to cache word list)
+from joblib import Memory
+
+# Create cache directory
+cache_dir = ".joblib-cache"
+
+# Create a memory object
+mem = Memory(cache_dir)
+
+@mem.cache(verbose=0)
+def get_word_list():
+    url = "https://raw.githubusercontent.com/dwyl/english-words/master/words_alpha.txt"
+    words = urllib.request.urlopen(url).read().decode().split()
+    return words
+
+# Download word list
+words = get_word_list()
+
+# select only those words that are 5 characters long
+sel = [word for word in words if len(word) == 5]
+
+# what letters must be in the wordle?
+must_include = set(incorrect_position.keys())
+
 print(f"Found {len(sel)} words with 5 characters.")
 
 for letter in correct_pos:
     sel = [word for word in sel if word[correct_pos[letter]] == letter]
-    print(f"With {letter} in position {correct_pos[letter]} : {len(sel)}")
-
+    print(f"With {letter} at index {correct_pos[letter]} : {len(sel)}")
 
 for letter in must_include:
     sel = [word for word in sel if letter in word]
@@ -84,7 +102,7 @@ for letter in must_include:
 for letter in incorrect_position:
     sel = [word for word in sel if not word[incorrect_position[letter]] == letter]
     print(
-        f" without '{letter}' at pos {incorrect_position[letter]}: {len(sel)} remaining."
+        f" without '{letter}' at index {incorrect_position[letter]}: {len(sel)} remaining."
     )
 
 
